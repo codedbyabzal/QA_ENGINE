@@ -1,0 +1,11 @@
+streamlit
+pandas
+plotly
+numpy
+opencv-python-headless
+pillow
+pdf2image
+beautifulsoup4
+reportlab
+weasyprint
+lxml
