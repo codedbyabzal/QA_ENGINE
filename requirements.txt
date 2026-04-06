@@ -9,3 +9,4 @@ beautifulsoup4
 reportlab
 weasyprint
 lxml
+pdfplumber
