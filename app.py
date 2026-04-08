@@ -24,6 +24,7 @@ def classify_ai(pdf_s, html_s):
 
     for p in pdf_s:
         best_score, best_match = 0, None
+
         for h in html_s:
             score = similarity(p, h)
             if score > best_score:
@@ -31,9 +32,11 @@ def classify_ai(pdf_s, html_s):
 
         if best_score > 0.9:
             used.add(best_match)
+
         elif best_score > 0.6:
             mismatch.append((p, best_match))
             used.add(best_match)
+
         else:
             missing.append(p)
 
@@ -80,6 +83,7 @@ if run and pdf_file and html_file:
         f.write(html_file.getbuffer())
 
     with st.spinner("Running QA Engine..."):
+
         pdf_text = clean_text(extract_pdf(pdf_path))
         html_text = clean_text(extract_html(html_path))
 
@@ -88,11 +92,14 @@ if run and pdf_file and html_file:
 
         if mode == "AI Smart":
             missing, extra, mismatch = classify_ai(pdf_s, html_s)
+
         else:
             missing, extra, mismatch = classify_strict(pdf_s, html_s)
 
     total = len(pdf_s)
+
     penalty = len(missing) + (len(mismatch) * 0.5)
+
     score = round(max(0, (1 - penalty / max(total, 1)) * 100), 2)
 
     st.session_state.data = {
@@ -110,9 +117,11 @@ data = st.session_state.get("data", None)
 
 # ---------------- DASHBOARD ---------------- #
 if page == "🏠 Dashboard":
+
     st.title("💎 QA Dashboard")
 
     if data:
+
         score = data["score"]
 
         st.markdown(f"""
@@ -126,16 +135,22 @@ if page == "🏠 Dashboard":
         st.progress(score/100)
 
         c1, c2, c3 = st.columns(3)
+
         c1.metric("Missing", len(data["missing"]))
         c2.metric("Extra", len(data["extra"]))
         c3.metric("Mismatch", len(data["mismatch"]))
 
         df = pd.DataFrame({
             "Type": ["Missing", "Extra", "Mismatch"],
-            "Count": [len(data["missing"]), len(data["extra"]), len(data["mismatch"])]
+            "Count": [
+                len(data["missing"]),
+                len(data["extra"]),
+                len(data["mismatch"])
+            ]
         })
 
         fig = px.bar(df, x="Type", y="Count")
+
         st.plotly_chart(fig, width="stretch")
 
     else:
@@ -144,6 +159,7 @@ if page == "🏠 Dashboard":
 
 # ---------------- ANALYSIS ---------------- #
 elif page == "🔍 Analysis":
+
     st.title("🔍 Content Analysis")
 
     if data:
@@ -152,36 +168,48 @@ elif page == "🔍 Analysis":
 
         # ---------- TEXT ----------
         with tab1:
+
             st.markdown("### 🔍 Text Differences")
 
-            # Missing
+            # -------- Missing --------
             if data["missing"]:
+
                 st.markdown("#### ❌ Missing Content (PDF → Not in HTML)")
 
                 for idx, line in enumerate(data["missing"], start=1):
+
                     st.markdown(f"""
-                    <div style="background:#fff5f5;padding:20px;
-                    border-radius:12px;border-left:6px solid #ef4444;
+                    <div style="background:#fff5f5;
+                    padding:20px;
+                    border-radius:12px;
+                    border-left:6px solid #ef4444;
                     margin-bottom:12px;">
-                    <b>Missing #{idx}</b><br><br>{line}
+                    <b>Missing #{idx}</b><br><br>
+                    {line}
                     </div>
                     """, unsafe_allow_html=True)
 
-            # Extra
+            # -------- Extra --------
             if data["extra"]:
+
                 st.markdown("#### ➕ Extra Content (HTML → Not in PDF)")
 
                 for idx, line in enumerate(data["extra"], start=1):
+
                     st.markdown(f"""
-                    <div style="background:#eff6ff;padding:20px;
-                    border-radius:12px;border-left:6px solid #3b82f6;
+                    <div style="background:#eff6ff;
+                    padding:20px;
+                    border-radius:12px;
+                    border-left:6px solid #3b82f6;
                     margin-bottom:12px;">
-                    <b>Extra #{idx}</b><br><br>{line}
+                    <b>Extra #{idx}</b><br><br>
+                    {line}
                     </div>
                     """, unsafe_allow_html=True)
 
-            # Mismatch
+            # -------- Mismatch --------
             if data["mismatch"]:
+
                 st.markdown("#### ⚠️ Mismatch Content")
 
                 for idx, (p, h) in enumerate(data["mismatch"], start=1):
@@ -189,8 +217,10 @@ elif page == "🔍 Analysis":
                     p_h, h_h = highlight_diff(p, h)
 
                     st.markdown(f"""
-                    <div style="background:white;padding:20px;
-                    border-radius:12px;border:2px solid #f59e0b;
+                    <div style="background:white;
+                    padding:20px;
+                    border-radius:12px;
+                    border:2px solid #f59e0b;
                     margin-bottom:15px;">
                     <b>Mismatch #{idx}</b><br><br>
                     <b>PDF:</b><br>{p_h}<br><br>
@@ -199,10 +229,11 @@ elif page == "🔍 Analysis":
                     """, unsafe_allow_html=True)
 
             if not data["missing"] and not data["extra"] and not data["mismatch"]:
-                st.success("✅ Perfect match — No issues detected")
+                st.success("✅ Perfect match — No text issues detected")
 
         # ---------- VISUAL ----------
         with tab2:
+
             pdf_path = "temp/input.pdf"
             html_path = "temp/input.html"
 
@@ -222,6 +253,7 @@ elif page == "🔍 Analysis":
 
 # ---------------- REPORTS ---------------- #
 elif page == "📊 Reports":
+
     st.title("📊 Reports")
 
     if data:
@@ -239,8 +271,19 @@ elif page == "📊 Reports":
             []
         )
 
-        st.download_button("📥 Excel Report", excel, "report.xlsx", width="stretch")
-        st.download_button("📄 PDF Report", pdf, "report.pdf", width="stretch")
+        st.download_button(
+            "📥 Excel Report",
+            excel,
+            "report.xlsx",
+            width="stretch"
+        )
+
+        st.download_button(
+            "📄 PDF Report",
+            pdf,
+            "report.pdf",
+            width="stretch"
+        )
 
     else:
         st.info("Run audit first")
