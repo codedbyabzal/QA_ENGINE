@@ -12,9 +12,11 @@ from utils.visual_utils import pdf_to_image, html_to_image, compare_images
 from utils.reporter import generate_excel_report
 from utils.pdf_report import generate_pdf_report
 
+
 # ---------------- AI ---------------- #
 def similarity(a, b):
     return SequenceMatcher(None, a, b).ratio()
+
 
 def classify_ai(pdf_s, html_s):
     missing, extra, mismatch = [], [], []
@@ -41,8 +43,10 @@ def classify_ai(pdf_s, html_s):
 
     return missing, extra, mismatch
 
+
 # ---------------- CONFIG ---------------- #
 st.set_page_config(page_title="QA Studio SaaS", layout="wide")
+
 
 # ---------------- SIDEBAR ---------------- #
 st.sidebar.markdown("## 🅰️ QA Studio SaaS")
@@ -59,6 +63,7 @@ html_file = st.sidebar.file_uploader("Upload HTML", type=["html", "htm"])
 mode = st.sidebar.radio("Comparison Mode", ["Strict", "AI Smart"])
 
 run = st.sidebar.button("🚀 Run Audit", width="stretch")
+
 
 # ---------------- PROCESS ---------------- #
 if run and pdf_file and html_file:
@@ -98,8 +103,10 @@ if run and pdf_file and html_file:
         "total": total
     }
 
+
 # ---------------- LOAD ---------------- #
 data = st.session_state.get("data", None)
+
 
 # ---------------- DASHBOARD ---------------- #
 if page == "🏠 Dashboard":
@@ -134,20 +141,12 @@ if page == "🏠 Dashboard":
     else:
         st.info("Run an audit to see dashboard")
 
+
 # ---------------- ANALYSIS ---------------- #
 elif page == "🔍 Analysis":
     st.title("🔍 Content Analysis")
 
     if data:
-
-        total_issues = len(data["mismatch"])
-
-        selected_issue = None
-        if total_issues > 0:
-            selected_issue = st.selectbox(
-                "📌 Jump to Issue",
-                list(range(1, total_issues + 1))
-            )
 
         tab1, tab2 = st.tabs(["Text", "Visual"])
 
@@ -155,23 +154,52 @@ elif page == "🔍 Analysis":
         with tab1:
             st.markdown("### 🔍 Text Differences")
 
-            if not data["mismatch"]:
-                st.success("✅ No mismatches found")
+            # Missing
+            if data["missing"]:
+                st.markdown("#### ❌ Missing Content (PDF → Not in HTML)")
 
-            for idx, (p, h) in enumerate(data["mismatch"], start=1):
-                p_h, h_h = highlight_diff(p, h)
+                for idx, line in enumerate(data["missing"], start=1):
+                    st.markdown(f"""
+                    <div style="background:#fff5f5;padding:20px;
+                    border-radius:12px;border-left:6px solid #ef4444;
+                    margin-bottom:12px;">
+                    <b>Missing #{idx}</b><br><br>{line}
+                    </div>
+                    """, unsafe_allow_html=True)
 
-                border = "3px solid #4f46e5" if selected_issue == idx else "1px solid #eee"
+            # Extra
+            if data["extra"]:
+                st.markdown("#### ➕ Extra Content (HTML → Not in PDF)")
 
-                st.markdown(f"""
-                <div style="background:white;padding:20px;
-                border-radius:12px;border:{border};
-                margin-bottom:15px;">
-                <b>Issue #{idx}</b><br><br>
-                <b>PDF:</b><br>{p_h}<br><br>
-                <b>HTML:</b><br>{h_h}
-                </div>
-                """, unsafe_allow_html=True)
+                for idx, line in enumerate(data["extra"], start=1):
+                    st.markdown(f"""
+                    <div style="background:#eff6ff;padding:20px;
+                    border-radius:12px;border-left:6px solid #3b82f6;
+                    margin-bottom:12px;">
+                    <b>Extra #{idx}</b><br><br>{line}
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            # Mismatch
+            if data["mismatch"]:
+                st.markdown("#### ⚠️ Mismatch Content")
+
+                for idx, (p, h) in enumerate(data["mismatch"], start=1):
+
+                    p_h, h_h = highlight_diff(p, h)
+
+                    st.markdown(f"""
+                    <div style="background:white;padding:20px;
+                    border-radius:12px;border:2px solid #f59e0b;
+                    margin-bottom:15px;">
+                    <b>Mismatch #{idx}</b><br><br>
+                    <b>PDF:</b><br>{p_h}<br><br>
+                    <b>HTML:</b><br>{h_h}
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            if not data["missing"] and not data["extra"] and not data["mismatch"]:
+                st.success("✅ Perfect match — No issues detected")
 
         # ---------- VISUAL ----------
         with tab2:
@@ -191,11 +219,13 @@ elif page == "🔍 Analysis":
     else:
         st.info("Run audit first")
 
+
 # ---------------- REPORTS ---------------- #
 elif page == "📊 Reports":
     st.title("📊 Reports")
 
     if data:
+
         excel = generate_excel_report(
             data["missing"],
             data["extra"],
